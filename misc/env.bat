@@ -1,0 +1,4 @@
+@echo off
+set EMSCRIPTEN_PATH=
+set VC_VARS_PATH=
+set WEBIDL_BINDER_PATH=
