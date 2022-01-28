@@ -2,7 +2,7 @@
 #define QUICKMAKE_GAME_H
 
 #define DELTA_TIME (1.0f / 60.0f)
-#define GAME_WIDTH 384.0f
+#define GAME_WIDTH 288.0f
 #define GAME_HEIGHT 216.0f
 
 #include "quickmake_platform.h"

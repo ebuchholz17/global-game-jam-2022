@@ -181,49 +181,31 @@
         </struct>
         <key>individualSpriteSettings</key>
         <map type="IndividualSpriteSettingsMap">
-            <key type="filename">main/black_key.png</key>
-            <key type="filename">main/black_key_pressed.png</key>
+            <key type="filename">main/1.png</key>
+            <key type="filename">main/2.png</key>
+            <key type="filename">main/3.png</key>
+            <key type="filename">main/4.png</key>
+            <key type="filename">main/5.png</key>
+            <key type="filename">main/6.png</key>
+            <key type="filename">main/7.png</key>
+            <key type="filename">main/8.png</key>
+            <key type="filename">main/bomb.png</key>
+            <key type="filename">main/closed_cell.png</key>
+            <key type="filename">main/flag.png</key>
+            <key type="filename">main/open_cell.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
                 <key>scale9Enabled</key>
                 <false/>
                 <key>scale9Borders</key>
-                <rect>6,32,12,65</rect>
+                <rect>3,3,6,6</rect>
                 <key>scale9Paddings</key>
-                <rect>6,32,12,65</rect>
+                <rect>3,3,6,6</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
-            <key type="filename">main/block_blink.png</key>
-            <key type="filename">main/player.png</key>
-            <key type="filename">main/tile_backing.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>4,4,8,8</rect>
-                <key>scale9Paddings</key>
-                <rect>4,4,8,8</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">main/blue_tile.png</key>
-            <key type="filename">main/cyan_tile.png</key>
             <key type="filename">main/golfman.png</key>
-            <key type="filename">main/golfman_appear_0.png</key>
-            <key type="filename">main/golfman_appear_1.png</key>
-            <key type="filename">main/golfman_appear_2.png</key>
-            <key type="filename">main/golfman_punch.png</key>
-            <key type="filename">main/golfman_run_0.png</key>
-            <key type="filename">main/golfman_run_1.png</key>
-            <key type="filename">main/green_tile.png</key>
-            <key type="filename">main/magenta_tile.png</key>
-            <key type="filename">main/red_tile.png</key>
-            <key type="filename">main/sheep.png</key>
-            <key type="filename">main/yellow_tile.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -233,33 +215,6 @@
                 <rect>8,8,16,16</rect>
                 <key>scale9Paddings</key>
                 <rect>8,8,16,16</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">main/boss.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>28,20,56,39</rect>
-                <key>scale9Paddings</key>
-                <rect>28,20,56,39</rect>
-                <key>scale9FromFile</key>
-                <false/>
-            </struct>
-            <key type="filename">main/white_key.png</key>
-            <key type="filename">main/white_key_pressed.png</key>
-            <struct type="IndividualSpriteSettings">
-                <key>pivotPoint</key>
-                <point_f>0.5,0.5</point_f>
-                <key>scale9Enabled</key>
-                <false/>
-                <key>scale9Borders</key>
-                <rect>12,54,24,108</rect>
-                <key>scale9Paddings</key>
-                <rect>12,54,24,108</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

@@ -12,8 +12,8 @@
 
 static bool programRunning = false;
 
-static int gameWidth = 1280;
-static int gameHeight = 720;
+static int gameWidth = 1152;
+static int gameHeight = 864;
 static float targetMSPerFrame = 1000.0f / 60.0f;
 
 // xinput functions
@@ -191,6 +191,15 @@ static void processWindowsMessages (HWND window, game_input *input, render_comma
             case WM_LBUTTONUP: {
                 input->pointerDown = false;
             } break;
+            case WM_RBUTTONDOWN: {
+                if (!input->pointerDown) {
+                    input->pointer2JustDown = true;
+                }
+                input->pointer2Down = true;
+            } break;
+            case WM_RBUTTONUP: {
+                input->pointer2Down = false;
+            } break;
             default: {
                 TranslateMessage(&message);
                 DispatchMessageA(&message);
@@ -363,6 +372,7 @@ static void loadXInput () {
 // TODO(ebuchholz): reset controllers
 void resetInput (game_input *input) {
     input->pointerJustDown = false;
+    input->pointer2JustDown = false;
     input->aKey.justPressed = false;
     input->sKey.justPressed = false;
     input->dKey.justPressed = false;
@@ -541,7 +551,7 @@ int WINAPI WinMain (HINSTANCE instance, HINSTANCE prevInstance, LPSTR commandLin
             bool shouldCheckForNewControllers = true;
             bool shouldLoadFile = false;
             while (programRunning) {
-                resetInput(&input);
+                //resetInput(&input);
 
                 processWindowsMessages(window, &input, &renderCommands);
 
