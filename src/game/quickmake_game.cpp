@@ -293,6 +293,12 @@ extern "C" void loadFile (game_memory *gameMemory, void *fileData, unsigned int 
 extern "C" void updateGame (game_input *input, game_memory *gameMemory, render_command_list *renderCommands, 
                             platform_options *options, platform_triggers *triggers) { 
     game_state *gameState = (game_state *)gameMemory->memory;
+
+    gameState->tempMemory = {};
+    gameState->tempMemory.size = 0;
+    gameState->tempMemory.capacity = gameMemory->tempMemoryCapacity;
+    gameState->tempMemory.base = (char *)gameMemory->tempMemory;
+
     if (!gameState->gameInitialized) {
         gameState->gameInitialized = true;
         gameState->sounds = {};
@@ -304,7 +310,7 @@ extern "C" void updateGame (game_input *input, game_memory *gameMemory, render_c
         initLetterCoords();
 
         //gameState->test3DGame = {};
-        initMinesweeperGame(&gameState->memory, &gameState->minesweeperGame);
+        initMinesweeperGame(&gameState->memory, &gameState->tempMemory, &gameState->minesweeperGame);
         //initPianoGame(&gameState->pianoGame);
         //initSkeletalGame(&gameState->memory, &gameState->skeletalGame);
         //initHitboxEditor(&gameState->memory, &gameState->assets, &gameState->hitboxEditor);
@@ -314,11 +320,6 @@ extern "C" void updateGame (game_input *input, game_memory *gameMemory, render_c
         //playBGM("qfg4", &gameState->sounds, &gameState->assets);
     }
     // general purpose temporary storage
-    gameState->tempMemory = {};
-    gameState->tempMemory.size = 0;
-    gameState->tempMemory.capacity = gameMemory->tempMemoryCapacity;
-    gameState->tempMemory.base = (char *)gameMemory->tempMemory;
-
     // Zero memory here? since uint8array.fill is slow in firefix
 
     sprite_list spriteList = {};
