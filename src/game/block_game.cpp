@@ -6,7 +6,7 @@ void initMinesweeperGame (memory_arena *memory, minesweeper_game* minesweeperGam
     *minesweeperGame = {};
 }
 
-void updateMinesweeperGame (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+void updateMinesweeperGame (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_sounds *gameSounds, game_input *input, 
                       minesweeper_game *minesweeperGame, sprite_list *spriteList)
 {
     if (input->upKey.down) {

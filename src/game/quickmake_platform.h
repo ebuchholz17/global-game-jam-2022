@@ -224,6 +224,7 @@ struct game_input {
     input_key leftKey;
     input_key rightKey;
 
+    input_key zKey;
     input_key aKey;
     input_key sKey;
     input_key dKey;
@@ -237,6 +238,7 @@ struct game_input {
     input_key tKey;
     input_key yKey;
     input_key uKey;
+    input_key spaceKey;
 
     game_controller_input controllers[4];
 

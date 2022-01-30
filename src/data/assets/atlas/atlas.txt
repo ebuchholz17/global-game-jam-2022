@@ -1,236 +1,404 @@
 atlas.png
-size: 512, 512
+size: 512, 1024
 format: RGBA8888
 filter: Linear,Linear
 repeat: none
 1
-  rotate: false
-  xy: 109, 2
-  size: 12, 12
-  orig: 12, 12
-  offset: 0, 0
-  index: -1
-2
-  rotate: false
-  xy: 123, 2
-  size: 12, 12
-  orig: 12, 12
-  offset: 0, 0
-  index: -1
-3
-  rotate: false
-  xy: 151, 2
-  size: 12, 12
-  orig: 12, 12
-  offset: 0, 0
-  index: -1
-4
   rotate: false
   xy: 193, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
+2
+  rotate: false
+  xy: 263, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+3
+  rotate: false
+  xy: 291, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+4
+  rotate: false
+  xy: 277, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
 5
   rotate: false
-  xy: 165, 2
+  xy: 235, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 6
   rotate: false
-  xy: 179, 2
+  xy: 221, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 7
   rotate: false
-  xy: 137, 2
+  xy: 207, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 8
   rotate: false
-  xy: 95, 2
+  xy: 249, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 big_1
   rotate: false
-  xy: 2, 122
+  xy: 260, 28
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_2
   rotate: false
-  xy: 88, 122
+  xy: 88, 200
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_3
   rotate: false
-  xy: 346, 36
+  xy: 174, 200
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_4
   rotate: false
-  xy: 174, 36
+  xy: 2, 287
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_5
   rotate: false
-  xy: 174, 122
+  xy: 88, 287
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_6
   rotate: false
-  xy: 88, 208
+  xy: 346, 200
   size: 84, 85
   orig: 84, 85
   offset: 0, 0
   index: -1
 big_7
   rotate: false
-  xy: 260, 122
+  xy: 260, 200
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_8
   rotate: false
-  xy: 346, 122
+  xy: 346, 28
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_bomb
   rotate: false
-  xy: 88, 36
+  xy: 2, 200
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_cell_closed
   rotate: false
-  xy: 2, 208
+  xy: 88, 114
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+big_cell_closed_cracked
+  rotate: false
+  xy: 260, 114
+  size: 84, 84
+  orig: 84, 84
+  offset: 0, 0
+  index: -1
+big_cell_hit
+  rotate: false
+  xy: 174, 114
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 big_flag
   rotate: false
-  xy: 260, 36
+  xy: 346, 114
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
+big_star
+  rotate: false
+  xy: 5, 2
+  size: 3, 3
+  orig: 3, 3
+  offset: 0, 0
+  index: -1
 bomb
   rotate: false
-  xy: 39, 2
+  xy: 109, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 button_down
   rotate: false
-  xy: 239, 2
+  xy: 96, 28
   size: 80, 27
   orig: 80, 27
   offset: 0, 0
   index: -1
 button_up
   rotate: false
-  xy: 321, 2
+  xy: 178, 28
   size: 80, 27
   orig: 80, 27
   offset: 0, 0
   index: -1
 cell_outline
   rotate: false
-  xy: 2, 36
+  xy: 2, 114
   size: 84, 84
   orig: 84, 84
   offset: 0, 0
   index: -1
 closed_cell
   rotate: false
+  xy: 95, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+cracked_cell
+  rotate: false
   xy: 67, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+enemy_1
+  rotate: false
+  xy: 31, 2
+  size: 10, 18
+  orig: 10, 18
+  offset: 0, 0
+  index: -1
+enemy_2
+  rotate: false
+  xy: 443, 2
+  size: 20, 12
+  orig: 20, 12
+  offset: 0, 0
+  index: -1
+enemy_3
+  rotate: false
+  xy: 403, 2
+  size: 18, 11
+  orig: 18, 11
+  offset: 0, 0
+  index: -1
+enemy_bullet
+  rotate: false
+  xy: 24, 2
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
+explosion
+  rotate: false
+  xy: 28, 28
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
+extra_health
+  rotate: false
+  xy: 123, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 flag
   rotate: false
-  xy: 81, 2
+  xy: 165, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
 golfman
   rotate: false
-  xy: 403, 2
+  xy: 62, 28
   size: 32, 32
   orig: 32, 32
   offset: 0, 0
   index: -1
 hitpoint
   rotate: false
-  xy: 32, 2
+  xy: 17, 2
   size: 5, 10
   orig: 5, 10
   offset: 0, 0
   index: -1
+l_power_grid
+  rotate: false
+  xy: 179, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+l_power_ui
+  rotate: false
+  xy: 465, 2
+  size: 24, 24
+  orig: 24, 24
+  offset: 0, 0
+  index: -1
 left_hand
   rotate: false
-  xy: 223, 2
+  xy: 336, 2
   size: 14, 15
   orig: 14, 15
   offset: 0, 0
   index: -1
 open_cell
   rotate: false
-  xy: 53, 2
+  xy: 151, 2
   size: 12, 12
   orig: 12, 12
   offset: 0, 0
   index: -1
+player_bullet
+  rotate: false
+  xy: 10, 2
+  size: 5, 5
+  orig: 5, 5
+  offset: 0, 0
+  index: -1
 right_hand
   rotate: false
-  xy: 207, 2
+  xy: 320, 2
   size: 14, 15
   orig: 14, 15
   offset: 0, 0
   index: -1
+roman_i
+  rotate: false
+  xy: 305, 2
+  size: 13, 18
+  orig: 13, 18
+  offset: 0, 0
+  index: -1
+roman_ii
+  rotate: false
+  xy: 368, 2
+  size: 15, 18
+  orig: 15, 18
+  offset: 0, 0
+  index: -1
+roman_iii
+  rotate: false
+  xy: 352, 2
+  size: 14, 18
+  orig: 14, 18
+  offset: 0, 0
+  index: -1
+s_power_grid
+  rotate: false
+  xy: 137, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+shield
+  rotate: false
+  xy: 423, 2
+  size: 18, 18
+  orig: 18, 18
+  offset: 0, 0
+  index: -1
 ship
   rotate: false
-  xy: 14, 2
+  xy: 385, 2
   size: 16, 9
   orig: 16, 9
   offset: 0, 0
   index: -1
 ship_icon
   rotate: false
-  xy: 2, 2
+  xy: 55, 2
   size: 10, 7
   orig: 10, 7
   offset: 0, 0
   index: -1
+ship_icon_shield
+  rotate: false
+  xy: 43, 2
+  size: 10, 8
+  orig: 10, 8
+  offset: 0, 0
+  index: -1
+small_star
+  rotate: false
+  xy: 2, 2
+  size: 1, 1
+  orig: 1, 1
+  offset: 0, 0
+  index: -1
+space_field
+  rotate: false
+  xy: 272, 287
+  size: 191, 216
+  orig: 191, 216
+  offset: 0, 0
+  index: -1
+status_bar
+  rotate: false
+  xy: 2, 505
+  size: 192, 17
+  orig: 192, 17
+  offset: 0, 0
+  index: -1
 ui_panel
   rotate: false
-  xy: 174, 208
+  xy: 174, 287
   size: 96, 216
   orig: 96, 216
+  offset: 0, 0
+  index: -1
+w_power_grid
+  rotate: false
+  xy: 81, 2
+  size: 12, 12
+  orig: 12, 12
+  offset: 0, 0
+  index: -1
+w_power_ui
+  rotate: false
+  xy: 2, 28
+  size: 24, 24
+  orig: 24, 24
   offset: 0, 0
   index: -1

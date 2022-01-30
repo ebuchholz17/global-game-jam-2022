@@ -226,6 +226,8 @@ WebPlatform.prototype = {
         }
         else {
             this.canvas.addEventListener("mousedown", this.onMouseDown.bind(this));
+            this.canvas.addEventListener("contextmenu", this.onMouseRightDown.bind(this));
+
             this.canvas.addEventListener("mouseup", this.onMouseUp.bind(this));
             this.canvas.addEventListener("mousemove", this.onMouseMove.bind(this));
         }
@@ -240,56 +242,19 @@ WebPlatform.prototype = {
 
     // TODO(ebuchholz): reset controllers
     resetInput: function () {
-        this.gameInput.upKey.down = this.input.keyDown["arrowup"];
-        this.gameInput.upKey.justPressed = this.input.keyJustPressed["arrowup"];
-        this.gameInput.downKey.down = this.input.keyDown["arrowdown"];
-        this.gameInput.downKey.justPressed = this.input.keyJustPressed["arrowdown"];
-        this.gameInput.leftKey.down = this.input.keyDown["arrowleft"];
-        this.gameInput.leftKey.justPressed = this.input.keyJustPressed["arrowleft"];
-        this.gameInput.rightKey.down = this.input.keyDown["arrowright"];
-        this.gameInput.rightKey.justPressed = this.input.keyJustPressed["arrowright"];
+        for (var key in this.input.keyJustPressed) {
+            if (this.input.keyJustPressed.hasOwnProperty(key)) {
+                this.input.keyJustPressed[key] = false;
+            }
+        }
+        this.input.pointerJustDown = false;
+        this.input.pointer2JustDown = false;
 
-        this.gameInput.aKey.down = this.input.keyDown["a"];
-        this.gameInput.aKey.justPressed = this.input.keyJustPressed["a"];
-        this.gameInput.sKey.down = this.input.keyDown["s"];
-        this.gameInput.sKey.justPressed = this.input.keyJustPressed["s"];
-        this.gameInput.dKey.down = this.input.keyDown["d"];
-        this.gameInput.dKey.justPressed = this.input.keyJustPressed["d"];
-        this.gameInput.fKey.down = this.input.keyDown["f"];
-        this.gameInput.fKey.justPressed = this.input.keyJustPressed["f"];
-        this.gameInput.gKey.down = this.input.keyDown["g"];
-        this.gameInput.gKey.justPressed = this.input.keyJustPressed["g"];
-        this.gameInput.hKey.down = this.input.keyDown["h"];
-        this.gameInput.hKey.justPressed = this.input.keyJustPressed["h"];
-        this.gameInput.jKey.down = this.input.keyDown["j"];
-        this.gameInput.jKey.justPressed = this.input.keyJustPressed["j"];
-        this.gameInput.kKey.down = this.input.keyDown["k"];
-        this.gameInput.kKey.justPressed = this.input.keyJustPressed["k"];
-        this.gameInput.wKey.down = this.input.keyDown["w"];
-        this.gameInput.wKey.justPressed = this.input.keyJustPressed["w"];
-        this.gameInput.eKey.down = this.input.keyDown["e"];
-        this.gameInput.eKey.justPressed = this.input.keyJustPressed["e"];
-        this.gameInput.tKey.down = this.input.keyDown["t"];
-        this.gameInput.tKey.justPressed = this.input.keyJustPressed["t"];
-        this.gameInput.yKey.down = this.input.keyDown["y"];
-        this.gameInput.yKey.justPressed = this.input.keyJustPressed["y"];
-        this.gameInput.uKey.down = this.input.keyDown["u"];
-        this.gameInput.uKey.justPressed = this.input.keyJustPressed["u"];
-
-        this.gameInput.pointerDown = this.input.pointerDown;
-        this.gameInput.pointerJustDown = this.input.pointerJustDown;
-        this.gameInput.pointerX = this.input.pointerX;
-        this.gameInput.pointerY = this.input.pointerY;
-
-        this.gameInput.pointer2Down = this.input.pointer2Down;
-        this.gameInput.pointer2JustDown = this.input.pointer2JustDown;
-        this.gameInput.pointer2X = this.input.pointer2X;
-        this.gameInput.pointer2Y = this.input.pointer2Y;
 
     },
 
     update: function () {
-        this.resetInput();
+        //this.resetInput();
 
         // get updated gamepad state
         var gamepads = navigator.getGamepads();
@@ -351,6 +316,57 @@ WebPlatform.prototype = {
         this.updateAccumulator += elapsedSeconds;
 
         while (this.updateAccumulator >= 1.0 / 60.0) {
+
+        this.gameInput.upKey.down = this.input.keyDown["arrowup"];
+        this.gameInput.upKey.justPressed = this.input.keyJustPressed["arrowup"];
+        this.gameInput.downKey.down = this.input.keyDown["arrowdown"];
+        this.gameInput.downKey.justPressed = this.input.keyJustPressed["arrowdown"];
+        this.gameInput.leftKey.down = this.input.keyDown["arrowleft"];
+        this.gameInput.leftKey.justPressed = this.input.keyJustPressed["arrowleft"];
+        this.gameInput.rightKey.down = this.input.keyDown["arrowright"];
+        this.gameInput.rightKey.justPressed = this.input.keyJustPressed["arrowright"];
+
+        this.gameInput.zKey.down = this.input.keyDown["z"];
+        this.gameInput.zKey.justPressed = this.input.keyJustPressed["z"];
+        this.gameInput.spaceKey.down = this.input.keyDown[" "];
+        this.gameInput.spaceKey.justPressed = this.input.keyJustPressed[" "];
+        this.gameInput.aKey.down = this.input.keyDown["a"];
+        this.gameInput.aKey.justPressed = this.input.keyJustPressed["a"];
+        this.gameInput.sKey.down = this.input.keyDown["s"];
+        this.gameInput.sKey.justPressed = this.input.keyJustPressed["s"];
+        this.gameInput.dKey.down = this.input.keyDown["d"];
+        this.gameInput.dKey.justPressed = this.input.keyJustPressed["d"];
+        this.gameInput.fKey.down = this.input.keyDown["f"];
+        this.gameInput.fKey.justPressed = this.input.keyJustPressed["f"];
+        this.gameInput.gKey.down = this.input.keyDown["g"];
+        this.gameInput.gKey.justPressed = this.input.keyJustPressed["g"];
+        this.gameInput.hKey.down = this.input.keyDown["h"];
+        this.gameInput.hKey.justPressed = this.input.keyJustPressed["h"];
+        this.gameInput.jKey.down = this.input.keyDown["j"];
+        this.gameInput.jKey.justPressed = this.input.keyJustPressed["j"];
+        this.gameInput.kKey.down = this.input.keyDown["k"];
+        this.gameInput.kKey.justPressed = this.input.keyJustPressed["k"];
+        this.gameInput.wKey.down = this.input.keyDown["w"];
+        this.gameInput.wKey.justPressed = this.input.keyJustPressed["w"];
+        this.gameInput.eKey.down = this.input.keyDown["e"];
+        this.gameInput.eKey.justPressed = this.input.keyJustPressed["e"];
+        this.gameInput.tKey.down = this.input.keyDown["t"];
+        this.gameInput.tKey.justPressed = this.input.keyJustPressed["t"];
+        this.gameInput.yKey.down = this.input.keyDown["y"];
+        this.gameInput.yKey.justPressed = this.input.keyJustPressed["y"];
+        this.gameInput.uKey.down = this.input.keyDown["u"];
+        this.gameInput.uKey.justPressed = this.input.keyJustPressed["u"];
+
+        this.gameInput.pointerDown = this.input.pointerDown;
+        this.gameInput.pointerJustDown = this.input.pointerJustDown;
+        this.gameInput.pointerX = this.input.pointerX;
+        this.gameInput.pointerY = this.input.pointerY;
+
+        this.gameInput.pointer2Down = this.input.pointer2Down;
+        this.gameInput.pointer2JustDown = this.input.pointer2JustDown;
+        this.gameInput.pointer2X = this.input.pointer2X;
+        this.gameInput.pointer2Y = this.input.pointer2Y;
+
             this.game.ccall("updateGame", 
                 "null", 
                 ["number", "number", "number", "number", "number"], 
@@ -388,14 +404,6 @@ WebPlatform.prototype = {
         }
 
         this.renderer.renderFrame(this.game, this.renderCommands);
-
-        for (var key in this.input.keyJustPressed) {
-            if (this.input.keyJustPressed.hasOwnProperty(key)) {
-                this.input.keyJustPressed[key] = false;
-            }
-        }
-        this.input.pointerJustDown = false;
-        this.input.pointer2JustDown = false;
 
         if (this.platformTriggers.triggerFileWindow) {
             // web file api
@@ -539,16 +547,33 @@ WebPlatform.prototype = {
             this.fileInput.click();
             this.fileSelectQueued = false;
         }
-        if (!this.input.pointerDown) {
-            this.input.pointerJustDown = true;
+        if (e.button == 0) {
+            if (!this.input.pointerDown) {
+                this.input.pointerJustDown = true;
+            }
+            this.input.pointerDown = true;
         }
-        this.input.pointerDown = true;
+        else {
+            if (!this.input.pointer2Down) {
+                this.input.pointer2JustDown = true;
+            }
+            this.input.pointer2Down = true;
+        }
 
         this.tryStartAudio();
     },
 
+    onMouseRightDown: function (e) {
+        e.preventDefault();
+    },
+
     onMouseUp: function (e) {
-        this.input.pointerDown = false;
+        if (e.button == 0) {
+            this.input.pointerDown = false;
+        }
+        else {
+            this.input.pointer2Down = false;
+        }
     },
 
     onMouseMove: function (e) {

@@ -191,8 +191,13 @@
             <key type="filename">main/8.png</key>
             <key type="filename">main/bomb.png</key>
             <key type="filename">main/closed_cell.png</key>
+            <key type="filename">main/cracked_cell.png</key>
+            <key type="filename">main/extra_health.png</key>
             <key type="filename">main/flag.png</key>
+            <key type="filename">main/l_power_grid.png</key>
             <key type="filename">main/open_cell.png</key>
+            <key type="filename">main/s_power_grid.png</key>
+            <key type="filename">main/w_power_grid.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>
@@ -214,6 +219,8 @@
             <key type="filename">main/big_8.png</key>
             <key type="filename">main/big_bomb.png</key>
             <key type="filename">main/big_cell_closed.png</key>
+            <key type="filename">main/big_cell_closed_cracked.png</key>
+            <key type="filename">main/big_cell_hit.png</key>
             <key type="filename">main/big_flag.png</key>
             <key type="filename">main/cell_outline.png</key>
             <struct type="IndividualSpriteSettings">
@@ -241,6 +248,20 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">main/big_star.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>1,1,1,1</rect>
+                <key>scale9Paddings</key>
+                <rect>1,1,1,1</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/button_down.png</key>
             <key type="filename">main/button_up.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -254,6 +275,60 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">main/enemy_1.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>3,5,5,9</rect>
+                <key>scale9Paddings</key>
+                <rect>3,5,5,9</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/enemy_2.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>5,3,10,6</rect>
+                <key>scale9Paddings</key>
+                <rect>5,3,10,6</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/enemy_3.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>5,3,9,5</rect>
+                <key>scale9Paddings</key>
+                <rect>5,3,9,5</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/enemy_bullet.png</key>
+            <key type="filename">main/player_bullet.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>1,1,3,3</rect>
+                <key>scale9Paddings</key>
+                <rect>1,1,3,3</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/explosion.png</key>
             <key type="filename">main/golfman.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
@@ -280,6 +355,19 @@
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
+            <key type="filename">main/l_power_ui.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>6,6,12,12</rect>
+                <key>scale9Paddings</key>
+                <rect>6,6,12,12</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
             <key type="filename">main/left_hand.png</key>
             <key type="filename">main/right_hand.png</key>
             <struct type="IndividualSpriteSettings">
@@ -291,6 +379,46 @@
                 <rect>4,4,7,7</rect>
                 <key>scale9Paddings</key>
                 <rect>4,4,7,7</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/roman_i.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>3,5,7,9</rect>
+                <key>scale9Paddings</key>
+                <rect>3,5,7,9</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/roman_ii.png</key>
+            <key type="filename">main/roman_iii.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>4,5,7,9</rect>
+                <key>scale9Paddings</key>
+                <rect>4,5,7,9</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/shield.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>5,5,9,9</rect>
+                <key>scale9Paddings</key>
+                <rect>5,5,9,9</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>
@@ -317,6 +445,58 @@
                 <rect>3,2,5,3</rect>
                 <key>scale9Paddings</key>
                 <rect>3,2,5,3</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/ship_icon_shield.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>3,2,5,4</rect>
+                <key>scale9Paddings</key>
+                <rect>3,2,5,4</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/small_star.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>0,0,1,1</rect>
+                <key>scale9Paddings</key>
+                <rect>0,0,1,1</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/space_field.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>48,54,95,108</rect>
+                <key>scale9Paddings</key>
+                <rect>48,54,95,108</rect>
+                <key>scale9FromFile</key>
+                <false/>
+            </struct>
+            <key type="filename">main/status_bar.png</key>
+            <struct type="IndividualSpriteSettings">
+                <key>pivotPoint</key>
+                <point_f>0.5,0.5</point_f>
+                <key>scale9Enabled</key>
+                <false/>
+                <key>scale9Borders</key>
+                <rect>48,4,96,9</rect>
+                <key>scale9Paddings</key>
+                <rect>48,4,96,9</rect>
                 <key>scale9FromFile</key>
                 <false/>
             </struct>

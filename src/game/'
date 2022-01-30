@@ -1,0 +1,1468 @@
+#include <time.h>
+
+#include "minesweeper_game.h"
+
+typedef mine_cell *mine_cell_ptr;
+#define LIST_TYPE mine_cell_ptr
+#include "list.h"
+
+
+void openAllNearbyZeroValueCells (mine_cell *startCell, memory_arena *tempMemory, minesweeper_game *game) {
+
+    unsigned int prevSize = tempMemory->size;
+    mine_cell_ptr_list cellsToOpen = mine_cell_ptrListInit(tempMemory, FIELD_WIDTH * FIELD_HEIGHT);
+    listPush(&cellsToOpen, startCell);
+
+    for (int cellIndex = 0; cellIndex < FIELD_WIDTH * FIELD_HEIGHT; ++cellIndex) {
+        mine_cell *cell = &game->cells[cellIndex];
+        cell->seen = false;
+    }
+
+    while (cellsToOpen.numValues > 0) {
+        mine_cell *currentCell = cellsToOpen.values[0];
+        currentCell->open = true;
+        listSplice(&cellsToOpen, 0);
+
+        if (currentCell->numAdjBombs == 0) {
+            // TODO(ebuchholz): condense all these -1 to 1 searches somehow
+            for (int i = -1; i <= 1; ++i) {
+                for (int j = -1; j <= 1; ++j) {
+                    int row = currentCell->row + i;
+                    int col = currentCell->col + j;
+
+                    if ((row == currentCell->row && col == currentCell->col )|| 
+                        row < 0 || row >= FIELD_HEIGHT ||
+                        col < 0 || col >= FIELD_WIDTH) 
+                    {
+                        continue;
+                    }
+
+                    mine_cell *neighbor = &game->cells[row * FIELD_WIDTH + col];
+                    if (!neighbor->seen) {
+                        neighbor->seen = true;
+                        listPush(&cellsToOpen, neighbor);
+                    }
+                }
+            }
+        }
+    }
+
+    tempMemory->size = prevSize;
+}
+
+void initMinesweeperGame (memory_arena *memory, memory_arena *tempMemory, minesweeper_game* game) {
+    setRNGSeed((unsigned int)time(0));
+
+    *game = {};
+
+    game->currentView = VIEW_MODE_FIELD;
+    game->state = GAME_STATE_NORMAL;
+
+    game->screenRow = FIELD_HEIGHT - 3;
+    game->screenCol = (FIELD_WIDTH / 2) - 1;
+    game->screenX = 42.0f;
+    game->screenY = 42.0f;
+
+    game->ship.row = FIELD_HEIGHT -1;
+    game->ship.col = FIELD_WIDTH / 2;
+    game->ship.x = 42.0f;
+    game->ship.y = 42.0f;
+
+    game->enemyPattern.enemyIDs = entity_idListInit(memory, 30);
+    game->enemyPattern.type = ENEMY_PATTERN_TYPE_NONE;
+
+    for (int i = 0; i < 30; ++i) {
+        space_enemy *enemy = &game->enemies[i];
+        enemy->id.value = i;
+    }
+
+    for (int i = 0; i < MAX_NUM_PLAYER_BULLETS; ++i) {
+        space_bullet *bullet = &game->playerBullets[i];
+        bullet->id.value = i;
+    }
+
+    for (int i = 0; i < MAX_NUM_ENEMY_BULLETS; ++i) {
+        space_bullet *bullet = &game->enemyBullets[i];
+        bullet->id.value = i;
+    }
+
+    for (int i = 0; i < MAX_EXPLOSIONS; ++i) {
+        space_explosion *explosion = &game->explosions[i];
+        explosion->id.value = i;
+    }
+
+    int numBombs = 136;
+    for (int i = 0; i < FIELD_HEIGHT; ++i) {
+        for (int j = 0; j < FIELD_WIDTH; ++j) {
+            int index = i * FIELD_WIDTH + j;
+            mine_cell *cell = &game->cells[index];
+            cell->row = i;
+            cell->col = j;
+
+            if (index < numBombs) {
+                cell->hasBomb = true;
+            }
+        }
+    }
+
+    int numCellsLessLastRows = FIELD_WIDTH * (FIELD_HEIGHT - 4);
+    for (int i = numCellsLessLastRows - 1; i >= 0; --i) {
+        mine_cell *cell = &game->cells[i];
+
+        int randomIndex = randomUint() % (numCellsLessLastRows);
+        mine_cell *randomCell = &game->cells[randomIndex];
+    
+        bool temp = cell->hasBomb;
+        cell->hasBomb = randomCell->hasBomb;
+        randomCell->hasBomb = temp;
+    }
+
+    for (int cellIndex = 0; cellIndex < FIELD_WIDTH * FIELD_HEIGHT; ++cellIndex) {
+        mine_cell *cell = &game->cells[cellIndex];
+
+        for (int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
+                int row = cell->row + i;
+                int col = cell->col + j;
+
+                if ((row == cell->row && col == cell->col )|| 
+                    row < 0 || row >= FIELD_HEIGHT ||
+                    col < 0 || col >= FIELD_WIDTH) 
+                {
+                    continue;
+                }
+
+                mine_cell *neighbor = &game->cells[row * FIELD_WIDTH + col];
+                if (neighbor->hasBomb) {
+                    cell->numAdjBombs++;
+                }
+            }
+        }
+    }
+
+    mine_cell *firstCell = &game->cells[(FIELD_HEIGHT - 1) * FIELD_WIDTH + (FIELD_WIDTH / 2)];
+    firstCell->open = true;
+    openAllNearbyZeroValueCells(firstCell, tempMemory, game);
+}
+
+void zoomIntoShip (minesweeper_game *game) {
+    game->zoomT += DELTA_TIME;
+    if (game->zoomT >= 0.5f) {
+        game->state = GAME_STATE_NORMAL;
+        game->zoomT = 0.0f;
+        game->currentView = VIEW_MODE_SHIP;
+    }
+}
+
+void zoomIntoBattle (minesweeper_game *game) {
+    game->zoomT += DELTA_TIME;
+    if (game->zoomT >= 0.5f) {
+        game->state = GAME_STATE_BATTLE;
+        game->zoomT = 0.0f;
+        game->currentView = VIEW_MODE_BATTLE;
+    }
+}
+
+void zoomOutOfShip (minesweeper_game *game) {
+    game->zoomT += DELTA_TIME;
+    if (game->zoomT >= 0.5f) {
+        game->state = GAME_STATE_NORMAL;
+        game->zoomT = 0.0f;
+    }
+}
+
+void updateFieldView (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+                      minesweeper_game *game, sprite_list *spriteList) {
+    int fieldScreenRow = (game->screenRow + 3) - 18;
+    float fieldScreenY = game->screenY / (float)SPACE_SHIP_ZOOM;
+    if (fieldScreenRow < 0) {
+        fieldScreenRow = 0;
+        fieldScreenY = 0.0f;
+    }
+
+    pushSpriteTransform(spriteList, Vector2(0.0f, -(fieldScreenRow * CELL_DIM + fieldScreenY)));
+
+    matrix3x3 gameTransform = peekSpriteMatrix(spriteList);
+    vector3 localPointerPos = Vector3((float)input->pointerX, (float)input->pointerY, 1.0f);
+    localPointerPos = inverse(gameTransform) * localPointerPos;
+
+    popSpriteMatrix(spriteList);
+
+    int mouseRow = (int)(localPointerPos.y / CELL_DIM);
+    int mouseCol = (int)(localPointerPos.x / CELL_DIM);
+
+    if (game->currentView == VIEW_MODE_FIELD) {
+        if (mouseRow >= 0 && mouseRow < FIELD_HEIGHT && mouseCol >= 0 && mouseCol < FIELD_WIDTH) {
+            if (input->pointerJustDown) {
+                mine_cell *cell = &game->cells[mouseRow * FIELD_WIDTH + mouseCol];
+                if (!cell->open) {
+                    if (!cell->flagged) {
+                        cell->open = true;
+
+                        if (cell->hasBomb) {
+
+                        }
+                        else if (cell->numAdjBombs == 0) {
+                            openAllNearbyZeroValueCells(cell, tempMemory, game);
+                        }
+                    }
+                }
+                else {
+                    if (!cell->hasBomb && cell->numAdjBombs > 0) {
+                        int numFlaggedNeighbors = 0;
+                        for (int i = -1; i <= 1; ++i) {
+                            for (int j = -1; j <= 1; ++j) {
+                                int row = cell->row + i;
+                                int col = cell->col + j;
+
+                                if ((row == cell->row && col == cell->col )|| 
+                                    row < 0 || row >= FIELD_HEIGHT ||
+                                    col < 0 || col >= FIELD_WIDTH) 
+                                {
+                                    continue;
+                                }
+
+                                mine_cell *neighbor = &game->cells[row * FIELD_WIDTH + col];
+                                if (neighbor->flagged || (neighbor->open && neighbor->hasBomb)) {
+                                    numFlaggedNeighbors++;
+                                }
+                            }
+                        }
+                        if (numFlaggedNeighbors == cell->numAdjBombs) {
+                            for (int i = -1; i <= 1; ++i) {
+                                for (int j = -1; j <= 1; ++j) {
+                                    int row = cell->row + i;
+                                    int col = cell->col + j;
+
+                                    if ((row == cell->row && col == cell->col )|| 
+                                        row < 0 || row >= FIELD_HEIGHT ||
+                                        col < 0 || col >= FIELD_WIDTH) 
+                                    {
+                                        continue;
+                                    }
+
+                                    mine_cell *neighbor = &game->cells[row * FIELD_WIDTH + col];
+                                    if (!neighbor->open && !neighbor->flagged) {
+                                        neighbor->open = true;
+
+                                        if (neighbor->hasBomb) {
+
+                                        }
+                                        else if (neighbor->numAdjBombs == 0) {
+                                            openAllNearbyZeroValueCells(neighbor, tempMemory, game);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else if (input->pointer2JustDown) {
+                mine_cell *cell = &game->cells[mouseRow * FIELD_WIDTH + mouseCol];
+                if (!cell->open) {
+                    cell->flagged = !cell->flagged;
+                }
+            }
+        }
+    }
+}
+
+void trySwitchViews (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+                      minesweeper_game *game, sprite_list *spriteList) {
+    matrix3x3 gameTransform = peekSpriteMatrix(spriteList);
+    vector3 localPointerPos = Vector3((float)input->pointerX, (float)input->pointerY, 1.0f);
+    localPointerPos = inverse(gameTransform) * localPointerPos;
+
+    if (localPointerPos.x >= 200.0f && localPointerPos.x < 280.0f && 
+        localPointerPos.y >= 180.0f && localPointerPos.y < 207.0f)
+    {
+        if (input->pointerJustDown) {
+            game->buttonDown = true;
+        }
+        else if (!input->pointerDown) {
+            if (game->buttonDown) {
+                game->buttonDown = false;
+
+                if (game->currentView == VIEW_MODE_SHIP) {
+                    game->currentView = VIEW_MODE_FIELD;
+                    game->state = GAME_STATE_ZOOMING_OUT;
+                }
+                else if (game->currentView == VIEW_MODE_FIELD) {
+                    game->state = GAME_STATE_ZOOMING_IN;
+                }
+            }
+        }
+    }
+    else {
+        game->buttonDown = false;
+    }
+}
+
+vector2 distBetweenRowColXYs (int row0, int col0, float x0, float y0, 
+                              int row1, int col1, float x1, float y1) 
+{
+    vector2 result = Vector2();
+
+    int rowDiff = row1 - row0;
+    float rowFloatDiff = rowDiff * SPACE_SHIP_CELL_DIM;
+    float yDiff = y1 - y0;
+    result.y = rowFloatDiff + yDiff;
+
+    int colDiff = col1 - col0;
+    float colFloatDiff = colDiff * SPACE_SHIP_CELL_DIM;
+    float xDiff = x1 - x0;
+    result.x = colFloatDiff + xDiff;
+
+    return result;
+}
+
+void updateShipView (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+                      minesweeper_game *game, sprite_list *spriteList) {
+    // move ship
+    float shipSpeed = 84.0f;
+
+    if (game->currentView == VIEW_MODE_SHIP) {
+        if (input->leftKey.down || input->aKey.down) {
+            game->ship.x -= shipSpeed * DELTA_TIME;
+        }
+        if (input->rightKey.down || input->dKey.down) {
+            game->ship.x += shipSpeed * DELTA_TIME;
+        }
+        if (input->upKey.down || input->wKey.down) {
+            game->ship.y -= shipSpeed * DELTA_TIME;
+        }
+        if (input->downKey.down || input->sKey.down) {
+            game->ship.y += shipSpeed * DELTA_TIME;
+        }
+    }
+
+    if (game->ship.y < 0.0f) {
+        game->ship.row--;
+        game->ship.y += SPACE_SHIP_CELL_DIM;
+    }
+    if (game->ship.y >= SPACE_SHIP_CELL_DIM) {
+        game->ship.row++;
+        game->ship.y -= SPACE_SHIP_CELL_DIM;
+    }
+    if (game->ship.x < 0.0f) {
+        game->ship.col--;
+        game->ship.x += SPACE_SHIP_CELL_DIM;
+    }
+    if (game->ship.x >= SPACE_SHIP_CELL_DIM) {
+        game->ship.col++;
+        game->ship.x -= SPACE_SHIP_CELL_DIM;
+    }
+
+    game->ship.y += -21.0f * DELTA_TIME;
+    if (game->touchingWormhole) {
+        vector2 screenCornerToWormhole = distBetweenRowColXYs(game->screenRow, game->screenCol, game->screenX, game->screenY,
+                                                              game->wormholeRow - 1, game->wormholeCol - 1, 0.5f, 0.0f);
+        float dist = sqrtf(screenCornerToWormhole.x * screenCornerToWormhole.x + screenCornerToWormhole.y * screenCornerToWormhole.y);
+        if (dist < 5.0f) {
+            game->state = GAME_STATE_ZOOMING_INTO_BATTLE;
+        }
+        else {
+            vector2 direction = normalize(screenCornerToWormhole);
+
+        game->screenX += direction.x * 10.0f * DELTA_TIME;
+        game->screenY += direction.y * 10.0f * DELTA_TIME;
+
+        if (game->screenX < 0.0f) {
+            game->screenCol--;
+            game->screenX += SPACE_SHIP_CELL_DIM;
+        }
+        if (game->screenX >= SPACE_SHIP_CELL_DIM) {
+            game->screenCol++;
+            game->screenX -= SPACE_SHIP_CELL_DIM;
+        }
+        if (game->screenY < 0.0f) {
+            game->screenRow--;
+            game->screenY += SPACE_SHIP_CELL_DIM;
+        }
+        if (game->screenY >= SPACE_SHIP_CELL_DIM) {
+            game->screenRow++;
+            game->screenY -= SPACE_SHIP_CELL_DIM;
+        }
+        }
+    }
+    else if (game->suckingIntoWormhole) {
+        vector2 distToWormHole = distBetweenRowColXYs(game->ship.row, game->ship.col, game->ship.x, game->ship.y,
+                                                      game->wormholeRow, game->wormholeCol, 42.0f, 42.0f);
+
+        float dist = sqrtf(distToWormHole.x * distToWormHole.x + distToWormHole.y * distToWormHole.y);
+        float strength = 20000.0f / (dist);
+        if (strength > 2500.0f) {
+            strength = 2500.0f;
+        }
+        vector2 direction = normalize(distToWormHole);
+
+            game->ship.x += direction.x * strength * DELTA_TIME;
+            game->ship.y += direction.y * strength * DELTA_TIME;
+    }
+    else {
+        game->screenY += -21.0f * DELTA_TIME;
+        if (game->screenY < 0.0f) {
+            game->screenRow--;
+            game->screenY += SPACE_SHIP_CELL_DIM;
+        }
+    }
+
+    float movementWindow = 80.0f;
+    float shipScreenX = (game->ship.col - game->screenCol) * SPACE_SHIP_CELL_DIM + game->ship.x;
+    float distToLeftEdge = shipScreenX - game->screenX;
+    if (distToLeftEdge < movementWindow) {
+        game->screenX = shipScreenX - movementWindow;
+        while (game->screenX < 0.0f) {
+            game->screenCol--;
+            game->screenX += SPACE_SHIP_CELL_DIM;
+        }
+
+        if (game->screenCol < 0) {
+            game->screenCol = 0;
+            game->screenX = 0.0f;
+        }
+    }
+
+    float distToRightEdge = (game->screenX + 192.0f) - shipScreenX;
+    if (distToRightEdge < movementWindow) {
+        game->screenX = shipScreenX + movementWindow - 192.0f;
+        while (game->screenX >= SPACE_SHIP_CELL_DIM) {
+            game->screenCol++;
+            game->screenX -= SPACE_SHIP_CELL_DIM;
+        }
+    }
+
+    float screenXToRightEdge = (FIELD_WIDTH - game->screenCol) * SPACE_SHIP_CELL_DIM - game->screenX;
+    if (screenXToRightEdge < 192.0f) {
+        game->screenCol = FIELD_WIDTH;
+        game->screenX = -192.0f;
+        while (game->screenX < 0.0f) {
+            game->screenCol--;
+            game->screenX += SPACE_SHIP_CELL_DIM;
+        }
+    }
+
+    if (game->screenX < 0.0f) {
+        game->screenCol--;
+        game->screenX += SPACE_SHIP_CELL_DIM;
+    }
+    if (game->screenX >= SPACE_SHIP_CELL_DIM) {
+        game->screenCol++;
+        game->screenX -= SPACE_SHIP_CELL_DIM;
+    }
+
+    // can scroll y if sucking into wormhole
+    if (game->suckingIntoWormhole) {
+        float shipScreenY = (game->ship.row - game->screenRow) * SPACE_SHIP_CELL_DIM + game->ship.y;
+        float distToTopEdge = shipScreenY - game->screenY;
+        if (distToTopEdge < 120.0f) {
+            game->screenY -= 1.0f;
+            while (game->screenY < 0.0f) {
+                game->screenRow--;
+                game->screenY += SPACE_SHIP_CELL_DIM;
+            }
+
+            if (game->screenRow < 0) {
+                game->screenRow = 0;
+                game->screenY = 0.0f;
+            }
+        }
+
+        float distToBottomEdge = (game->screenY + 216.0f) - shipScreenY;
+        if (distToBottomEdge < 30.0f) {
+            game->screenY += 1.0f;
+            while (game->screenY >= SPACE_SHIP_CELL_DIM) {
+                game->screenRow++;
+                game->screenY -= SPACE_SHIP_CELL_DIM;
+            }
+        }
+
+        float screenXToBottomEdge = (FIELD_HEIGHT - game->screenRow) * SPACE_SHIP_CELL_DIM - game->screenY;
+        if (screenXToBottomEdge < 216.0f) {
+            game->screenRow = FIELD_HEIGHT;
+            game->screenY = -216.0f;
+            while (game->screenY < 0.0f) {
+                game->screenRow--;
+                game->screenY += SPACE_SHIP_CELL_DIM;
+            }
+        }
+
+        if (game->screenY < 0.0f) {
+            game->screenRow--;
+            game->screenY += SPACE_SHIP_CELL_DIM;
+        }
+        if (game->screenY >= SPACE_SHIP_CELL_DIM) {
+            game->screenRow++;
+            game->screenY -= SPACE_SHIP_CELL_DIM;
+        }
+    }
+
+    space_ship *ship = &game->ship;
+    if (ship->row >= 0 && ship->row < FIELD_HEIGHT &&
+        ship->col >= 0 && ship->col < FIELD_WIDTH) 
+    {
+        mine_cell *currentCell = &game->cells[ship->row * FIELD_WIDTH + ship->col];
+        if (currentCell->open && currentCell->hasBomb) {
+            game->touchingWormhole = true;
+            game->suckingIntoWormhole = false;
+        }
+    }
+
+}
+
+void trySuckingIntoWormhole (minesweeper_game *game) {
+    game->suckingIntoWormhole = false;
+    for (int i = 0; i < FIELD_HEIGHT; ++i) {
+        for (int j = 0; j < FIELD_WIDTH; ++j) {
+            mine_cell *cell = &game->cells[i * FIELD_WIDTH + j];
+            if (cell->open && cell->hasBomb) {
+                int rowDiff = cell->row - game->ship.row;
+                if (rowDiff < 0) {
+                    rowDiff = -rowDiff;
+                }
+
+                int colDiff = cell->col - game->ship.col;
+                if (colDiff < 0) {
+                    colDiff = -colDiff;
+                }
+
+                if (rowDiff <= 2 && colDiff <= 2) {
+                    game->suckingIntoWormhole = true;
+                    game->wormholeRow = i;
+                    game->wormholeCol = j;
+                }
+            }
+        }
+    }
+}
+space_bullet *spawnEnemyBullet (minesweeper_game *game) {
+    for (int i = 0; i < MAX_NUM_ENEMY_BULLETS; ++i) {
+        space_bullet *bullet = &game->enemyBullets[i];
+        if (!bullet->active) {
+            entity_id id = bullet->id;
+            *bullet = {};
+            bullet->active = true;
+            bullet->id = id;
+            return bullet;
+        }
+    }
+    return 0;
+}
+
+space_bullet *spawnPlayerBullet (minesweeper_game *game) {
+    for (int i = 0; i < MAX_NUM_PLAYER_BULLETS; ++i) {
+        space_bullet *bullet = &game->playerBullets[i];
+        if (!bullet->active) {
+            entity_id id = bullet->id;
+            *bullet = {};
+            bullet->active = true;
+            bullet->id = id;
+            return bullet;
+        }
+    }
+    return 0;
+}
+
+void checkPointCellOverlap (bullet_cell_grid *bulletCellGrid, int *numCellsCovered, bullet_cell **potentialCells, vector2 corner) {
+    int cellCol = (int)((corner.x) / 16.0f);
+    int cellRow = (int)((corner.y) / 16.0f);
+    bullet_cell *bulletCell = bulletCellGrid->cells + (cellRow * bulletCellGrid->numCols + cellCol);
+
+    bool cellAlreadyAdded = false;
+    for (int cellIndex = 0; cellIndex < *numCellsCovered; ++cellIndex) {
+        if (bulletCell == potentialCells[cellIndex]) {
+            cellAlreadyAdded = true;
+            break;
+        }
+    }
+    
+    if (!cellAlreadyAdded) {
+        potentialCells[*numCellsCovered] = bulletCell;
+        ++(*numCellsCovered);
+    }
+}
+
+void despawnPlayerBullet(space_bullet *bullet) {
+    bullet->active = false;
+    bullet->id.generation++;
+}
+
+void updatePlayerBullets (minesweeper_game *game, bullet_cell_grid *bulletCellGrid) {
+    bullet_cell *potentialCells[4];
+    int numCellsCovered = 0;
+
+    for (int i = 0; i < MAX_NUM_ENEMY_BULLETS; ++i) {
+        space_bullet *bullet = game->playerBullets + i;
+        if (bullet->active) {
+            bullet->pos += DELTA_TIME * bullet->velocity;
+
+            bullet->timeAlive += DELTA_TIME;
+            bool despawn = false;
+            if (bullet->timeAlive > BULLET_LIFETIME) {
+                despawn = true;
+            }
+            else if (bullet->pos.x + BULLET_RADIUS < 0.0f || 
+                     bullet->pos.x - BULLET_RADIUS >= 192.0f || 
+                     bullet->pos.y + BULLET_RADIUS < 0.0f || 
+                     bullet->pos.y - BULLET_RADIUS >= 216.0f) 
+            {
+                despawn = true;
+            }
+
+            if (despawn) {
+                despawnPlayerBullet(bullet);
+            }
+            else {
+                // put bullet into grid
+                numCellsCovered = 0;
+
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(-BULLET_RADIUS, -BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(BULLET_RADIUS, -BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(-BULLET_RADIUS, BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(BULLET_RADIUS, BULLET_RADIUS));
+
+                for (int cellIndex = 0; cellIndex < numCellsCovered; ++cellIndex) {
+                    bullet_cell *bulletCell = potentialCells[cellIndex];
+                    if (bulletCell->numBullets < NUM_BULLETS_PER_CELL) {
+                        bulletCell->bullets[bulletCell->numBullets] = bullet;
+                        ++bulletCell->numBullets;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+bool checkPlayerBulletCollisions (minesweeper_game *game, bullet_cell_grid *bulletCellGrid) {
+    vector2 playerPos = Vector2(game->ship.battleX, game->ship.battleY);
+
+    bullet_cell *overlappedCells[4];
+    int numCellsCovered = 0;
+    checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, playerPos + Vector2(-PLAYER_RADIUS, -PLAYER_RADIUS));
+    checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, playerPos + Vector2(PLAYER_RADIUS, -PLAYER_RADIUS));
+    checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, playerPos + Vector2(-PLAYER_RADIUS, PLAYER_RADIUS));
+    checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, playerPos + Vector2(PLAYER_RADIUS, PLAYER_RADIUS));
+
+    for (int cellIndex = 0; cellIndex < numCellsCovered; ++cellIndex) {
+        bullet_cell *bulletCell = overlappedCells[cellIndex];
+        for (int i = 0; i < bulletCell->numBullets; ++i) {
+            space_bullet *bullet = bulletCell->bullets[i];
+            float dist = sqrtf(square(bullet->pos.x - playerPos.x) + 
+                               square(bullet->pos.y - playerPos.y));
+            if (dist < BULLET_RADIUS + PLAYER_RADIUS) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void updateEnemyBullets (minesweeper_game *game, bullet_cell_grid *bulletCellGrid) {
+    bullet_cell *potentialCells[4];
+    int numCellsCovered = 0;
+
+    for (int i = 0; i < MAX_NUM_ENEMY_BULLETS; ++i) {
+        space_bullet *bullet = game->enemyBullets + i;
+        if (bullet->active) {
+            bullet->pos += DELTA_TIME * bullet->velocity;
+
+            bullet->timeAlive += DELTA_TIME;
+            bool despawn = false;
+            if (bullet->timeAlive > BULLET_LIFETIME) {
+                despawn = true;
+            }
+            else if (bullet->pos.x + BULLET_RADIUS < 0.0f || 
+                     bullet->pos.x - BULLET_RADIUS >= 192.0f || 
+                     bullet->pos.y + BULLET_RADIUS < 0.0f || 
+                     bullet->pos.y - BULLET_RADIUS >= 216.0f) 
+            {
+                despawn = true;
+            }
+
+            if (despawn) {
+                bullet->active = false;
+                bullet->id.generation++;
+            }
+            else {
+                // put bullet into grid
+                numCellsCovered = 0;
+
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(-BULLET_RADIUS, -BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(BULLET_RADIUS, -BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(-BULLET_RADIUS, BULLET_RADIUS));
+                checkPointCellOverlap(bulletCellGrid, &numCellsCovered, potentialCells, bullet->pos + Vector2(BULLET_RADIUS, BULLET_RADIUS));
+
+                for (int cellIndex = 0; cellIndex < numCellsCovered; ++cellIndex) {
+                    bullet_cell *bulletCell = potentialCells[cellIndex];
+                    if (bulletCell->numBullets < NUM_BULLETS_PER_CELL) {
+                        bulletCell->bullets[bulletCell->numBullets] = bullet;
+                        ++bulletCell->numBullets;
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+
+space_enemy *tryGetEnemyByID (minesweeper_game *game, entity_id id) {
+    space_enemy *enemy = &game->enemies[id.value];
+    if (enemy->active && (id.value == enemy->id.value && id.generation == enemy->id.generation)) {
+        return enemy;
+    }
+    return 0;
+}
+
+space_enemy *activateEnemy (minesweeper_game *game) {
+    for (int i = 0; i < 30; ++i) {
+        space_enemy *enemy = &game->enemies[i];
+        if (!enemy->active) {
+            entity_id id = enemy->id;
+            *enemy = {};
+            enemy->active = true;
+            enemy->id = id;
+            return enemy;
+        }
+    }
+
+    assert(0);
+    return 0;
+}
+
+void destroyEnemy (space_enemy *enemy) {
+    enemy->active = false;
+    enemy->id.generation++;
+}
+
+space_explosion *activateExplosion (minesweeper_game *game) {
+    for (int i = 0; i < 30; ++i) {
+        space_explosion *explosion = &game->explosions[i];
+        if (!explosion->active) {
+            entity_id id = explosion->id;
+            *explosion = {};
+            explosion->active = true;
+            explosion->id = id;
+            return explosion;
+        }
+    }
+
+    assert(0);
+    return 0;
+}
+
+void destroyExplosion (space_explosion *explosion) {
+    explosion->active = false;
+    explosion->id.generation++;
+}
+
+void checkEnemyBulletCollisions (minesweeper_game *game, bullet_cell_grid *bulletCellGrid) {
+    for (int enemyIndex = 0; enemyIndex < 30; ++enemyIndex) {
+        space_enemy *enemy = &game->enemies[enemyIndex];
+        if (enemy->active) {
+            vector2 enemyPos = enemy->pos;
+
+            bullet_cell *overlappedCells[4];
+            int numCellsCovered = 0;
+            checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, enemyPos + Vector2(-ENEMY_RADIUS, -ENEMY_RADIUS));
+            checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, enemyPos + Vector2(ENEMY_RADIUS, -ENEMY_RADIUS));
+            checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, enemyPos + Vector2(-ENEMY_RADIUS, ENEMY_RADIUS));
+            checkPointCellOverlap(bulletCellGrid, &numCellsCovered, overlappedCells, enemyPos + Vector2(ENEMY_RADIUS, ENEMY_RADIUS));
+
+            for (int cellIndex = 0; cellIndex < numCellsCovered; ++cellIndex) {
+                bullet_cell *bulletCell = overlappedCells[cellIndex];
+                for (int i = 0; i < bulletCell->numBullets; ++i) {
+                    space_bullet *bullet = bulletCell->bullets[i];
+                    float dist = sqrtf(square(bullet->pos.x - enemyPos.x) + 
+                                       square(bullet->pos.y - enemyPos.y));
+                    if (dist < BULLET_RADIUS + ENEMY_RADIUS) {
+                        despawnPlayerBullet(bullet);
+
+                        // damage enemy
+                        enemy->hp--;
+                        if (enemy->hp <= 0) {
+                            destroyEnemy(enemy);
+
+                            space_explosion *explosion = activateExplosion(game);
+                            if (explosion) {
+                                explosion->pos = enemy->pos;
+                                explosion->t = 0.0f;
+                                explosion->maxScale = 1.0f;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+void cleanUpEnemyPattern (minesweeper_game *game) {
+    for (int i = 0; i < game->enemyPattern.enemyIDs.numValues; ++i) {
+        space_enemy *enemy = tryGetEnemyByID(game, game->enemyPattern.enemyIDs.values[i]);
+        if (enemy) {
+            destroyEnemy(enemy);
+        }
+    }
+    game->enemyPattern.enemyIDs.numValues = 0;
+}
+
+void activateNumEnemies (int num, int type, minesweeper_game *game, enemy_pattern *pattern) {
+    for (int i = 0; i < num; ++i) {
+        space_enemy *enemy = activateEnemy(game);
+        enemy->enemyType = type;
+        switch (type) {
+            default:
+            case 1: {
+                enemy->hp = 3;
+            } break;
+            case 2: {
+                enemy->hp = 3;
+            } break;
+            case 3: {
+                enemy->hp = 3;
+            } break;
+        }
+        listPush(&pattern->enemyIDs, enemy->id);
+    }
+}
+
+void initNewEnemyPattern (minesweeper_game *game) {
+    cleanUpEnemyPattern(game);
+
+    enemy_pattern *pattern = &game->enemyPattern;
+    pattern->t = 0.0f;
+    pattern->complete = false;
+    pattern->type = (enemy_pattern_type)(randomUint() % ENEMY_PATTERN_TYPE_COUNT);
+    pattern->enemyIDs.numValues = 0;
+
+    switch (pattern->type) {
+        default:
+        case ENEMY_PATTERN_TYPE_BASIC: {
+            activateNumEnemies(7, 1, game, pattern);
+            pattern->minBulletSpawnTime = 0.25;
+            pattern->maxBulletSpawnTime = 1.0f;
+        } break;
+    }
+
+    game->enemyBulletT = 0.0f;
+    float randomT = randomFloat();
+    game->nextEnemyBulletTime = (1.0f - randomT) * game->enemyPattern.minBulletSpawnTime + 
+                                randomT * game->enemyPattern.maxBulletSpawnTime;
+}
+
+void updateBasicPattern (minesweeper_game *game, enemy_pattern *pattern) {
+    float startAngle = 0.0f;
+    float endAngle = PI / 2.0f + PI / 4.0f;
+    float angleDiff = endAngle - startAngle;
+    float enemySpacing = PI / 16.0f;
+    float duration = 4.0f;
+
+    for (int i = 0; i < pattern->enemyIDs.numValues; ++i) {
+        space_enemy *enemy = tryGetEnemyByID(game, pattern->enemyIDs.values[i]);
+        if (enemy) {
+            float t = (pattern->t / duration) * angleDiff - (float)i * enemySpacing;
+            enemy->pos.x = 40.0f + 150.0f * cosf(t);
+            enemy->pos.y = -30.0f + 150.0f * sinf(t);
+        }
+    }
+
+    if (pattern->t >= 6.0f) {
+        pattern->complete = true;
+    }
+}
+
+void updateEnemyPattern (minesweeper_game *game) {
+    enemy_pattern *pattern = &game->enemyPattern;
+    pattern->t += DELTA_TIME;
+
+    switch (pattern->type) {
+        default:
+        case ENEMY_PATTERN_TYPE_BASIC: {
+            updateBasicPattern(game, pattern);
+        } break;
+    }
+}
+
+void updateBattle (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+                   minesweeper_game *game, sprite_list *spriteList) 
+{
+    float shipSpeed = 84.0f;
+    game->starT += DELTA_TIME;
+    if (input->leftKey.down || input->aKey.down) {
+        game->ship.battleX -= shipSpeed * DELTA_TIME;
+    }
+    if (input->rightKey.down || input->dKey.down) {
+        game->ship.battleX += shipSpeed * DELTA_TIME;
+    }
+    if (input->upKey.down || input->wKey.down) {
+        game->ship.battleY -= shipSpeed * DELTA_TIME;
+    }
+    if (input->downKey.down || input->sKey.down) {
+        game->ship.battleY += shipSpeed * DELTA_TIME;
+    }
+
+    bullet_cell_grid enemyBulletGrid = {};
+    enemyBulletGrid.numRows = 14;
+    enemyBulletGrid.numCols = 12;
+    enemyBulletGrid.cells = (bullet_cell *)allocateMemorySize(tempMemory, enemyBulletGrid.numRows * enemyBulletGrid.numCols * sizeof(bullet_cell));
+
+    for (int i = 0; i < enemyBulletGrid.numRows; ++i) {
+        for (int j = 0; j < enemyBulletGrid.numCols; ++j) {
+            bullet_cell *bulletCell = enemyBulletGrid.cells + (i * enemyBulletGrid.numCols + j);
+            *bulletCell = {};
+        }
+    }
+
+    bullet_cell_grid playerBulletGrid = {};
+    playerBulletGrid.numRows = 14;
+    playerBulletGrid.numCols = 12;
+    playerBulletGrid.cells = (bullet_cell *)allocateMemorySize(tempMemory, playerBulletGrid.numRows * playerBulletGrid.numCols * sizeof(bullet_cell));
+
+    for (int i = 0; i < playerBulletGrid.numRows; ++i) {
+        for (int j = 0; j < playerBulletGrid.numCols; ++j) {
+            bullet_cell *bulletCell = playerBulletGrid.cells + (i * playerBulletGrid.numCols + j);
+            *bulletCell = {};
+        }
+    }
+
+    bool shooting = false;
+    if (input->zKey.down || input->spaceKey.down) {
+        shooting = true;
+    }
+
+    game->bulletTimer += DELTA_TIME;
+    if (shooting) {
+        if (game->bulletTimer > 0.2f) {
+            game->bulletTimer = 0.0f;
+
+            space_bullet *bullet = spawnPlayerBullet(game);
+            if (bullet) {
+                bullet->pos = Vector2(game->ship.battleX, game->ship.battleY) + Vector2(0.0f, -3.0f);
+                bullet->velocity = 250.0f * normalize(Vector2(0.0f, -1.0f));
+            }
+        }
+    }
+
+
+    if (game->enemyPattern.type == ENEMY_PATTERN_TYPE_NONE || game->enemyPattern.complete) {
+        initNewEnemyPattern(game);
+    }
+    updateEnemyPattern(game);
+
+    space_enemy_ptr_list activeEnemies = space_enemy_ptrListInit(tempMemory, 30);
+    for (int i = 0; i < 30; ++i) {
+        space_enemy *enemy = &game->enemies[i];
+        if (enemy->active) {
+            listPush(&activeEnemies, enemy);
+        }
+    }
+    for (int i = activeEnemies.numValues - 1; i >= 0; --i) {
+        int randomIndex = randomUint() % (activeEnemies.numValues);
+        space_enemy *randomEnemy = activeEnemies.values[randomIndex];
+    
+        space_enemy *temp = activeEnemies.values[i];
+        activeEnemies.values[i] = randomEnemy;
+        activeEnemies.values[randomIndex] = temp;
+    }
+
+    game->enemyBulletT += DELTA_TIME;
+    if (game->enemyBulletT >= game->nextEnemyBulletTime) {
+        for (int i = 0; i < activeEnemies.numValues; ++i) {
+            space_enemy *enemy = activeEnemies.values[i];
+            if (enemy->pos.x > 0 && enemy->pos.x < 192.0f && enemy->pos.y > 0 && enemy->pos.y < 216.0f) {
+                space_bullet *bullet = spawnEnemyBullet(game);
+                if (bullet) {
+                    bullet->pos = Vector2(enemy->pos.x, enemy->pos.y) + Vector2(0.0f, 3.0f);
+                    bullet->velocity = 150.0f * normalize(Vector2(0.0f, 1.0f));
+                }
+
+                game->enemyBulletT = 0.0f;
+                float randomT = randomFloat();
+                game->nextEnemyBulletTime = (1.0f - randomT) * game->enemyPattern.minBulletSpawnTime + 
+                                            randomT * game->enemyPattern.maxBulletSpawnTime;
+                break;
+            }
+        }
+    }
+
+    updatePlayerBullets(game, &playerBulletGrid);
+    updateEnemyBullets(game, &enemyBulletGrid);
+
+    space_ship *ship = &game->ship;
+    if (!ship->hurt) {
+        bool playerHitByBullet = checkPlayerBulletCollisions(game, &enemyBulletGrid);
+        bool playerTouchedEnemy = false;
+        if (playerHitByBullet || playerTouchedEnemy) {
+            ship->hurt = true;
+            --game->hitpoints;
+        }
+    }
+
+    if (ship->hurt) {
+        ship->invincibilityTimer += DELTA_TIME;
+        if (ship->invincibilityTimer >= PLAYER_INVINCIBILITY_TIMER) {
+            ship->hurt = false;
+            ship->invincibilityTimer = 0.0f;
+        }
+    }
+
+    checkEnemyBulletCollisions(game, &playerBulletGrid);
+}
+
+void updateMinesweeperGame (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, game_input *input, 
+                      minesweeper_game *game, sprite_list *spriteList)
+{
+    switch (game->state) {
+        case GAME_STATE_NORMAL: {
+            updateFieldView(memory, tempMemory, assets, input, game, spriteList);
+            trySwitchViews(memory, tempMemory, assets, input, game, spriteList);
+            trySuckingIntoWormhole(game);
+            updateShipView(memory, tempMemory, assets, input, game, spriteList);
+        } break;
+        case GAME_STATE_ZOOMING_IN: {
+            zoomIntoShip(game);
+        } break;
+        case GAME_STATE_ZOOMING_INTO_BATTLE: {
+            zoomIntoBattle(game);
+        } break;
+        case GAME_STATE_ZOOMING_OUT: {
+            zoomOutOfShip(game);
+        } break;
+        case GAME_STATE_BATTLE: {
+            updateBattle(memory, tempMemory, assets, input, game, spriteList);
+        } break;
+    }
+
+    // update explosions
+    for (int i = 0; i < MAX_EXPLOSIONS; ++i) {
+        space_explosion *explosion = &game->explosions[i];
+        if (explosion->active) {
+            explosion->t += DELTA_TIME;
+            if (explosion->t >= 0.25f) {
+                explosion->active = false;
+                explosion->id.generation++;
+            }
+        }
+    }
+
+    // update hands
+    game->leftHandState = HAND_STATE_MIDDLE;
+    game->rightHandState = HAND_STATE_MIDDLE;
+
+    matrix3x3 gameTransform = peekSpriteMatrix(spriteList);
+    vector3 localPointerPos = Vector3((float)input->pointerX, (float)input->pointerY, 1.0f);
+    localPointerPos = inverse(gameTransform) * localPointerPos;
+    if (input->leftKey.down || input->aKey.down) {
+        game->leftHandState = HAND_STATE_LEFT;
+    }
+    if (input->rightKey.down || input->dKey.down) {
+        game->leftHandState = HAND_STATE_RIGHT;
+    }
+    if (localPointerPos.x < 64.0f) {
+        game->rightHandState = HAND_STATE_LEFT;
+    }
+    else if (localPointerPos.x >= 128.0f) {
+        game->rightHandState = HAND_STATE_RIGHT;
+    }
+}
+
+void drawMinesweeperGame (memory_arena *memory, memory_arena *tempMemory, game_assets *assets, 
+                    minesweeper_game *game, sprite_list *spriteList) 
+{
+    // memory for dynamically created strings
+    memory_arena stringMemory = {};
+    stringMemory.capacity = 512 * 1024;
+    stringMemory.base = allocateMemorySize(tempMemory, stringMemory.capacity);
+
+    if (game->currentView == VIEW_MODE_FIELD) {
+        int fieldScreenRow = (game->screenRow + 3) - 18;
+        float fieldScreenY = game->screenY / (float)SPACE_SHIP_ZOOM;
+        if (fieldScreenRow < 0) {
+            fieldScreenRow = 0;
+            fieldScreenY = 0.0f;
+        }
+
+        pushSpriteTransform(spriteList, Vector2(0.0f, -(fieldScreenRow * CELL_DIM + fieldScreenY)));
+
+        if (game->state == GAME_STATE_ZOOMING_IN) {
+            float scaleAmount = 1.0f + 4.0f * (game->zoomT / 0.5f);
+
+            vector2 target = Vector2();
+            target.x = (float)(game->ship.col * CELL_DIM + (game->ship.x / ((float)SPACE_SHIP_ZOOM)));
+            target.y = (float)(game->ship.row * CELL_DIM + (game->ship.y / ((float)SPACE_SHIP_ZOOM)));
+
+            matrix3x3 posMatrix;
+            posMatrix = translationMatrix(target.x, target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+
+            matrix3x3 scaleTransform = scaleMatrix3x3(scaleAmount, scaleAmount);
+            pushSpriteMatrix(scaleTransform, spriteList);
+
+            posMatrix = translationMatrix(-target.x, -target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+        }
+        else if (game->state == GAME_STATE_ZOOMING_OUT) {
+            float scaleAmount = 1.0f + 4.0f * ((0.5f - game->zoomT) / 0.5f);
+
+            vector2 target = Vector2();
+            target.x = (float)(game->ship.col * CELL_DIM + (game->ship.x / ((float)SPACE_SHIP_ZOOM)));
+            target.y = (float)(game->ship.row * CELL_DIM + (game->ship.y / ((float)SPACE_SHIP_ZOOM)));
+
+            matrix3x3 posMatrix;
+            posMatrix = translationMatrix(target.x, target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+
+            matrix3x3 scaleTransform = scaleMatrix3x3(scaleAmount, scaleAmount);
+            pushSpriteMatrix(scaleTransform, spriteList);
+
+            posMatrix = translationMatrix(-target.x, -target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+        }
+
+        for (int i = 0; i < FIELD_HEIGHT; ++i) {
+            for (int j = 0; j < FIELD_WIDTH; ++j) {
+                mine_cell *cell = &game->cells[i * FIELD_WIDTH + j];
+                cell->row = i;
+                cell->col = j;
+
+                if (!cell->open) {
+                    sprite cellSprite = Sprite();
+                    cellSprite.pos.x = (float)(cell->col * CELL_DIM);
+                    cellSprite.pos.y = (float)(cell->row * CELL_DIM);
+                    addSprite(cellSprite, assets, "atlas", "closed_cell", spriteList);
+
+                    if (cell->flagged) {
+                        addSprite(cellSprite, assets, "atlas", "flag", spriteList);
+                    }
+
+                    //if (cell->hasBomb) {
+                    //    addSprite(cellSprite, assets, "atlas", "flag", spriteList);
+                    //}
+                }
+                else {
+                    sprite cellSprite = Sprite();
+                    cellSprite.pos.x = (float)(cell->col * CELL_DIM);
+                    cellSprite.pos.y = (float)(cell->row * CELL_DIM);
+                    addSprite(cellSprite, assets, "atlas", "open_cell", spriteList);
+
+                    if (cell->hasBomb) {
+                        addSprite(cellSprite, assets, "atlas", "bomb", spriteList);
+                    }
+                    else {
+                        if (cell->numAdjBombs > 0) {
+                            addSprite(cellSprite, assets, "atlas", numToString(cell->numAdjBombs, &stringMemory), spriteList);
+                        }
+                    }
+                }
+            }
+        }
+
+        sprite shipSprite = Sprite();
+        shipSprite.pos.x = (float)(game->ship.col * CELL_DIM + (game->ship.x / ((float)SPACE_SHIP_ZOOM)));
+        shipSprite.pos.y = (float)(game->ship.row * CELL_DIM + (game->ship.y / ((float)SPACE_SHIP_ZOOM)));
+        shipSprite.anchor.x = 0.5f;
+        shipSprite.anchor.y = 0.5f;
+        addSprite(shipSprite, assets, "atlas", "ship_icon", spriteList);
+
+        if (game->state == GAME_STATE_ZOOMING_IN || game->state == GAME_STATE_ZOOMING_OUT) {
+            popSpriteMatrix(spriteList);
+            popSpriteMatrix(spriteList);
+            popSpriteMatrix(spriteList);
+        }
+
+        popSpriteMatrix(spriteList);
+    }
+    else if (game->currentView == VIEW_MODE_SHIP) {
+        pushSpriteTransform(spriteList, Vector2(-game->screenX, -game->screenY));
+
+        static float bombRotation = 0.0f;
+        bombRotation -= (1.0f / 4.0f * PI) * DELTA_TIME;
+
+        if (game->state == GAME_STATE_ZOOMING_INTO_BATTLE) {
+            float scaleAmount = 1.0f + 4.0f * (game->zoomT / 0.5f);
+
+            vector2 target = Vector2();
+            target.x = (game->ship.col - game->screenCol) * SPACE_SHIP_CELL_DIM + game->ship.x;
+            target.y = (game->ship.row - game->screenRow) * SPACE_SHIP_CELL_DIM + game->ship.y;
+
+            matrix3x3 posMatrix;
+            posMatrix = translationMatrix(target.x, target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+
+            matrix3x3 scaleTransform = scaleMatrix3x3(scaleAmount, scaleAmount);
+            pushSpriteMatrix(scaleTransform, spriteList);
+
+            posMatrix = translationMatrix(-target.x, -target.y);
+            pushSpriteMatrix(posMatrix, spriteList);
+        }
+
+        for (int i = 0; i < 5; ++i) {
+            for (int j = 0; j < 5; ++j) {
+                int row = game->screenRow + i;
+                int col = game->screenCol + j;
+                if (row < 0 || row >= FIELD_HEIGHT ||
+                    col < 0 || col >= FIELD_WIDTH) 
+                {
+                    continue;
+                }
+
+                sprite cellSprite = Sprite();
+                cellSprite.pos.x = (float)(j * SPACE_SHIP_ZOOM * CELL_DIM);
+                cellSprite.pos.y = (float)(i * SPACE_SHIP_ZOOM * CELL_DIM);
+
+                mine_cell *cell = &game->cells[row * FIELD_WIDTH + col];
+                if  (cell->open) {
+                    addSprite(cellSprite, assets, "atlas", "cell_outline", spriteList);
+
+                    if (cell->hasBomb) {
+                        sprite bombSprite = Sprite();
+                        bombSprite.pos.x = (float)(j * SPACE_SHIP_ZOOM * CELL_DIM + 0.5f * (SPACE_SHIP_ZOOM * CELL_DIM));
+                        bombSprite.pos.y = (float)(i * SPACE_SHIP_ZOOM * CELL_DIM + 0.5f * (SPACE_SHIP_ZOOM * CELL_DIM));
+                        bombSprite.anchor.x = 0.5f;
+                        bombSprite.anchor.y = 0.5f;
+                        bombSprite.rotation = bombRotation;
+                        addSprite(bombSprite, assets, "atlas", "big_bomb", spriteList);
+                    }
+                    else {
+                        if (cell->numAdjBombs > 0) {
+                            addSprite(cellSprite, assets, "atlas", appendString("big_", numToString(cell->numAdjBombs, &stringMemory), &stringMemory), spriteList);
+                        }
+                    }
+                }
+                else {
+                    addSprite(cellSprite, assets, "atlas", "big_cell_closed", spriteList);
+                    if (cell->flagged) {
+                        addSprite(cellSprite, assets, "atlas", "big_flag", spriteList);
+                    }
+                }
+
+            }
+        }
+
+        if (game->state == GAME_STATE_ZOOMING_INTO_BATTLE) {
+            popSpriteMatrix(spriteList);
+            popSpriteMatrix(spriteList);
+            popSpriteMatrix(spriteList);
+        }
+
+        float shipX = (game->ship.col - game->screenCol) * SPACE_SHIP_CELL_DIM + game->ship.x;
+        float shipY = (game->ship.row - game->screenRow) * SPACE_SHIP_CELL_DIM + game->ship.y;
+
+        sprite shipSprite = Sprite();
+        shipSprite.pos.x = shipX;
+        shipSprite.pos.y = shipY;
+        shipSprite.anchor.x = 0.5f;
+        shipSprite.anchor.y = 0.5f;
+        addSprite(shipSprite, assets, "atlas", "ship", spriteList);
+
+        popSpriteMatrix(spriteList);
+    }
+    else if (game->currentView == VIEW_MODE_BATTLE) {
+        sprite bgSprite = Sprite();
+        bgSprite.pos.x = 0.0f;
+        bgSprite.pos.y = 0.0f;
+        addSprite(bgSprite, assets, "atlas", "space_field", spriteList);
+
+        for (int i = 0; i < 12; ++i) {
+            sprite starSprite = Sprite();
+            float x = 10.0f + i * 50.0f;
+            while (x > 192.0f) {
+                x -= 192.0f;
+            }
+            starSprite.pos.x = x;
+
+            float y = i * 100.0f;
+            y += 45.0f * game->starT;
+            while (y > 236.0f) {
+                y -= 236.0f;
+            }
+            starSprite.pos.y = y;
+
+            starSprite.anchor.x = 0.5f;
+            starSprite.anchor.y = 0.5f;
+            addSprite(starSprite, assets, "atlas", "big_star", spriteList);
+        }
+
+        for (int i = 0; i < 20; ++i) {
+            sprite starSprite = Sprite();
+            float x = 10.0f + i * 150.0f;
+            while (x > 192.0f) {
+                x -= 192.0f;
+            }
+            starSprite.pos.x = x;
+
+            float y = i * 200.0f;
+            y += 15.0f * game->starT;
+            while (y > 236.0f) {
+                y -= 236.0f;
+            }
+            starSprite.pos.y = y;
+
+            starSprite.anchor.x = 0.5f;
+            starSprite.anchor.y = 0.5f;
+            addSprite(starSprite, assets, "atlas", "small_star", spriteList);
+        }
+
+        sprite shipSprite = Sprite();
+        shipSprite.pos.x = game->ship.battleX;
+        shipSprite.pos.y = game->ship.battleY;
+        shipSprite.anchor.x = 0.5f;
+        shipSprite.anchor.y = 0.5f;
+        if (game->ship.hurt) {
+            shipSprite.alpha = 0.5f;
+        }
+        addSprite(shipSprite, assets, "atlas", "ship", spriteList);
+
+        for (int i = 0; i < MAX_NUM_PLAYER_BULLETS; ++i) {
+            space_bullet *bullet = &game->playerBullets[i];
+            if (bullet->active) {
+                sprite bulletSprite = Sprite();
+                bulletSprite.pos.x = bullet->pos.x;
+                bulletSprite.pos.y = bullet->pos.y;
+                bulletSprite.anchor.x = 0.5f;
+                bulletSprite.anchor.y = 0.5f;
+                addSprite(bulletSprite, assets, "atlas", "player_bullet", spriteList);
+
+            }
+
+        }
+
+        for (int i = 0; i < MAX_NUM_ENEMY_BULLETS; ++i) {
+            space_bullet *bullet = &game->enemyBullets[i];
+            if (bullet->active) {
+                sprite bulletSprite = Sprite();
+                bulletSprite.pos.x = bullet->pos.x;
+                bulletSprite.pos.y = bullet->pos.y;
+                bulletSprite.anchor.x = 0.5f;
+                bulletSprite.anchor.y = 0.5f;
+                addSprite(bulletSprite, assets, "atlas", "enemy_bullet", spriteList);
+            }
+        }
+
+        for (int i = 0; i < 30; ++i) {
+            space_enemy *enemy = &game->enemies[i];
+            if (enemy->active) {
+                sprite enemySprite = Sprite();
+                enemySprite.pos.x = enemy->pos.x;
+                enemySprite.pos.y = enemy->pos.y;
+                enemySprite.anchor.x = 0.5f;
+                enemySprite.anchor.y = 0.5f;
+                addSprite(enemySprite, assets, "atlas", appendString("enemy_", numToString(enemy->enemyType, &stringMemory), &stringMemory), spriteList);
+            }
+
+        }
+    }
+
+    // Explosions
+    for (int i = 0; i < MAX_EXPLOSIONS; ++i) {
+        space_explosion *explosion = &game->explosions[i];
+        if (explosion->active) {
+
+            sprite explosionSprite = Sprite();
+            explosionSprite.pos.x = explosion->pos.x;
+            explosionSprite.pos.y = explosion->pos.y;
+            explosionSprite.anchor.x = 0.5f;
+            explosionSprite.anchor.y = 0.5f;
+            float scale = (explosion->t/0.25f) * explosion->maxScale;
+            explosionSprite.scale = scale;
+            float alpha = 1.0f;
+            if (explosion->t > 0.125f) {
+                alpha = 1.0f - ((explosion->t - 0.125f) / 0.125f);
+            }
+            explosionSprite.alpha = alpha;
+            addSprite(explosionSprite, assets, "atlas", "explosion", spriteList);
+        }
+    }
+
+    // UI
+    sprite uiSprite = Sprite();
+    uiSprite.pos.x = 192.0f;
+    uiSprite.pos.y = 0.0f;
+    addSprite(uiSprite, assets, "atlas", "ui_panel", spriteList);
+
+    sprite leftHandSprite = Sprite();
+    leftHandSprite.pos.x = 260.0f;
+    if (game->leftHandState == HAND_STATE_LEFT) {
+        leftHandSprite.pos.x = 262.0f;
+    }
+    else if (game->leftHandState == HAND_STATE_RIGHT) {
+        leftHandSprite.pos.x = 258.0f;
+    }
+    leftHandSprite.pos.y = 55.0f;
+    leftHandSprite.anchor.x = 0.0f;
+    leftHandSprite.anchor.y = 1.0f;
+    addSprite(leftHandSprite, assets, "atlas", "right_hand", spriteList);
+
+
+    sprite rightHandSprite = Sprite();
+    rightHandSprite.pos.x = 204.0f;
+    if (game->rightHandState == HAND_STATE_LEFT) {
+        rightHandSprite.pos.x = 206.0f;
+    }
+    else if (game->rightHandState == HAND_STATE_RIGHT) {
+        rightHandSprite.pos.x = 202.0f;
+    }
+    rightHandSprite.pos.y = 55.0f;
+    rightHandSprite.anchor.x = 0.0f;
+    rightHandSprite.anchor.y = 1.0f;
+    addSprite(rightHandSprite, assets, "atlas", "left_hand", spriteList);
+
+    addText(220.0f, 63.0f, "SCORE", assets, "font", spriteList);
+
+    int digits = 1;
+    int tempScore = game->score;
+    while (tempScore > 0) {
+        tempScore /= 10;
+        ++digits;
+    }
+
+    float shift = (float)(-digits) * 4.0f;
+    addText(242.0f + shift, 80.0f, numToString(game->score, &stringMemory), assets, "font", spriteList);
+
+    for (int i = 0; i < game->hitpoints; ++i) {
+        sprite hitpointSprite = Sprite();
+        hitpointSprite.pos.x = 203.0f + i * 9.0f;
+        hitpointSprite.pos.y = 101.0f;
+        addSprite(hitpointSprite, assets, "atlas", "hitpoint", spriteList);
+    }
+
+    sprite lifeSprite = Sprite();
+    lifeSprite.pos.x = 244.0f;
+    lifeSprite.pos.y = 101.0f;
+    addSprite(lifeSprite, assets, "atlas", "ship", spriteList);
+
+    addText(264.0f, 101.0f, appendString("x", numToString(game->lives, &stringMemory), &stringMemory), assets, "font", spriteList);
+
+    addText(224.0f, 122.0f, "BEAM", assets, "font", spriteList);
+
+    sprite buttonSprite = Sprite();
+    buttonSprite.pos.x = 200.0f;
+    buttonSprite.pos.y = 180.0f;
+    if (game->buttonDown) {
+        addSprite(buttonSprite, assets, "atlas", "button_down", spriteList);
+    }
+    else {
+        addSprite(buttonSprite, assets, "atlas", "button_up", spriteList);
+    }
+
+    if (game->currentView == VIEW_MODE_FIELD) {
+        addText(222.0f, 185.0f, "SHIP", assets, "font", spriteList);
+    }
+    else {
+        addText(218.0f, 185.0f, "FIELD", assets, "font", spriteList);
+    }
+    addText(222.0f, 195.0f, "VIEW", assets, "font", spriteList);
+
+    if (game->suckingIntoWormhole) {
+        sprite statusSprite = Sprite();
+        statusSprite.pos.x = 0.0f;
+        statusSprite.pos.y = 0.0f;
+        addSprite(statusSprite, assets, "atlas", "status_bar", spriteList);
+
+        addText(30.0f, 5.0f, "WORMHOLE DETECTED", assets, "font", spriteList);
+    }
+}

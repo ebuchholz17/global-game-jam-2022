@@ -143,6 +143,12 @@ static void processWindowsMessages (HWND window, game_input *input, render_comma
                     }
                     input->aKey.down = keyDown;
                 }
+                else if (keyCode == 'Z') {
+                    if (!input->zKey.down && keyDown) {
+                        input->zKey.justPressed = true;
+                    }
+                    input->zKey.down = keyDown;
+                }
                 else if (keyCode == VK_UP) {
                     if (!input->upKey.down && keyDown) {
                         input->upKey.justPressed = true;
@@ -166,6 +172,12 @@ static void processWindowsMessages (HWND window, game_input *input, render_comma
                         input->rightKey.justPressed = true;
                     }
                     input->rightKey.down = keyDown;
+                }
+                else if (keyCode == VK_SPACE) {
+                    if (!input->spaceKey.down && keyDown) {
+                        input->spaceKey.justPressed = true;
+                    }
+                    input->spaceKey.down = keyDown;
                 }
 
                 if (keyDown) {
@@ -373,6 +385,7 @@ static void loadXInput () {
 void resetInput (game_input *input) {
     input->pointerJustDown = false;
     input->pointer2JustDown = false;
+    input->zKey.justPressed = false;
     input->aKey.justPressed = false;
     input->sKey.justPressed = false;
     input->dKey.justPressed = false;
@@ -390,6 +403,7 @@ void resetInput (game_input *input) {
     input->downKey.justPressed = false;
     input->leftKey.justPressed = false;
     input->rightKey.justPressed = false;
+    input->spaceKey.justPressed = false;
 }
 
 int WINAPI WinMain (HINSTANCE instance, HINSTANCE prevInstance, LPSTR commandLine, int showCode) {

@@ -497,6 +497,21 @@ inline vector2 transformDirection (matrix3x3 m, vector2 v) {
     return result;
 }
 
+inline float lengthSquared (vector2 a) {
+    return dotProduct(a, a);
+}
+
+inline float length (vector2 a) {
+    return sqrtf(lengthSquared(a));
+}
+
+
+inline vector2 normalize (vector2 a) {
+    return a * (1.0f / length(a));
+}
+
+
+
 // vector3
 inline vector3 Vector3 (float x = 0.0f, float y = 0.0f, float z = 0.0f) {
     vector3 result;

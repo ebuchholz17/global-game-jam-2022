@@ -370,7 +370,7 @@ extern "C" void updateGame (game_input *input, game_memory *gameMemory, render_c
         gameState->fileJustLoaded = false;
     }
 
-    updateMinesweeperGame(&gameState->memory, &gameState->tempMemory, &gameState->assets, input, &gameState->minesweeperGame, &spriteList);
+    updateMinesweeperGame(&gameState->memory, &gameState->tempMemory, &gameState->assets, &gameState->sounds, input, &gameState->minesweeperGame, &spriteList);
     //updatePianoGame(&gameState->sounds, &gameState->assets, input, &gameState->pianoGame, &spriteList, &gameState->tempMemory);
     //updateSkeletalGame(&gameState->memory, &gameState->tempMemory, &gameState->assets, input, &gameState->skeletalGame, &spriteList, renderCommands);
     //updateControllerTestGame(&gameState->memory, &gameState->tempMemory, &gameState->assets, input, &spriteList);
