@@ -23,7 +23,7 @@ char *defaultVertexShaderSource = R"shader(
         float lighting = dot(newNormal, vec4(lightDir, 0.0));
         vLighting = lighting;
 
-        vFogAmount = saturate((-100.0 - cameraPos.z) / (-100.0 - (-50.0)));
+        vFogAmount = lighting;
     }
 )shader";
 
