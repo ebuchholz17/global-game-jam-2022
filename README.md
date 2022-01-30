@@ -1,1 +1,1 @@
-- [Play Sweeper's Game](https://github.com/ebuchholz17/global-game-jam-2022/sweeper/index.html)
+- [Play Sweeper's Game](https://ebuchholz17.github.io/global-game-jam-2022/sweeper/index.html)
