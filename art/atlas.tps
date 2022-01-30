@@ -356,6 +356,7 @@
                 <false/>
             </struct>
             <key type="filename">main/l_power_ui.png</key>
+            <key type="filename">main/w_power_ui.png</key>
             <struct type="IndividualSpriteSettings">
                 <key>pivotPoint</key>
                 <point_f>0.5,0.5</point_f>

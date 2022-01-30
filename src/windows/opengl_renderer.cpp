@@ -285,8 +285,8 @@ int initOpenGL (HWND window, renderer_memory *memory) {
 
     createShaderProgram(renderer, SHADER_TYPE_DEFAULT,
                         defaultVertexShaderSource, defaultFragmentShaderSource, memory);
-    createShaderProgram(renderer, SHADER_TYPE_ANIMATED_MODEL,
-                        animatedModelVertexShaderSource, defaultFragmentShaderSource, memory);
+    //createShaderProgram(renderer, SHADER_TYPE_ANIMATED_MODEL,
+    //                    animatedModelVertexShaderSource, defaultFragmentShaderSource, memory);
     createShaderProgram(renderer, SHADER_TYPE_LINES,
                         lineVertexShaderSource, lineFragmentShaderSource, memory);
     createShaderProgram(renderer, SHADER_TYPE_SPRITE,
@@ -765,7 +765,7 @@ void renderFrame (renderer_memory *memory, render_command_list *renderCommands) 
             case RENDER_COMMAND_ANIMATED_MODEL: 
             {
                 // TODO(ebuchholz): have a way to not have to set the program for command
-                GLuint program = renderer->shaders[SHADER_TYPE_ANIMATED_MODEL].program;
+                GLuint program = renderer->shaders[SHADER_TYPE_DEFAULT].program;
                 glUseProgram(program);
 
                 render_command_animated_model *animatedModelCommand = 
